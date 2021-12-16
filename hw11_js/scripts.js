@@ -69,6 +69,89 @@ class ContactsApp extends Contacts {
         this.init()
     }
 
+    init() {
+        let btnAddELem = document.querySelector('button');
+
+        this.inputTitleName = document.querySelector('.name');
+        this.inputTitleTel = document.querySelector('.tel');
+        this.inputTitleAddress = document.querySelector('.address');
+        this.inputTitleEmail = document.querySelector('.email');
+        this.listElem = document.querySelector('.contacts');
+
+        btnAddELem.addEventListener('click', event => {
+            event.preventDefault()
+            this.onAdd()
+            this.inputTitleName.value = '';
+            this.inputTitleTel.value = '';
+            this.inputTitleAddress.value = '';
+            this.inputTitleEmail.value = '';
+
+            this.update()
+        })
+
+        let data = this.storage;
+
+        if (data && data.length > 0) {
+            this.data = data;
+            this.update();
+        }
+    }
+
+
+
+    getCookie(name) {
+        let matches = document.cookie.match(new RegExp(
+          "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+        ));
+        return matches ? decodeURIComponent(matches[1]) : undefined;
+    }
+
+    setCookie(name, value, options = {}) {
+
+        options = {
+          path: '/',
+          // при необходимости добавьте другие значения по умолчанию
+          ...options
+        };
+      
+        if (options.expires instanceof Date) {
+          options.expires = options.expires.toUTCString();
+        }
+      
+        let updatedCookie = encodeURIComponent(name) + "=" + encodeURIComponent(value);
+      
+        for (let optionKey in options) {
+          updatedCookie += "; " + optionKey;
+          let optionValue = options[optionKey];
+          if (optionValue !== true) {
+            updatedCookie += "=" + optionValue;
+          }
+        }
+      
+        document.cookie = updatedCookie;
+    }
+
+    set storage(data) {
+        localStorage.setItem('contact', JSON.stringify(data));
+        this.setCookie('storageExpiration', data, {'max-age': 3000});
+    }
+
+    get storage() {
+        
+        this.getCookie('storageExpiration');
+        
+        let localData = JSON.parse(localStorage.getItem('contact'));
+
+        if (!localData) return;
+
+        localData = localData.map(el=> {
+            el = new User(el.data);
+            return el;
+        })
+       
+        return localData;
+    }
+
     update() {
         let data = this.get()
 
@@ -144,28 +227,8 @@ class ContactsApp extends Contacts {
                 this.onRemove(item.data.id)
             })
         })
-    }
 
-
-    init() {
-        let btnAddELem = document.querySelector('button');
-
-        this.inputTitleName = document.querySelector('.name');
-        this.inputTitleTel = document.querySelector('.tel');
-        this.inputTitleAddress = document.querySelector('.address');
-        this.inputTitleEmail = document.querySelector('.email');
-        this.listElem = document.querySelector('.contacts');
-
-        btnAddELem.addEventListener('click', event => {
-            event.preventDefault()
-            this.onAdd()
-            this.inputTitleName.value = '';
-            this.inputTitleTel.value = '';
-            this.inputTitleAddress.value = '';
-            this.inputTitleEmail.value = '';
-
-            this.update()
-        })
+        this.storage = data;
     }
 
     onAdd() {
@@ -197,8 +260,8 @@ class ContactsApp extends Contacts {
             email: divEmail.textContent
         }
 
-        this.edit(id, data)
-        return this.update()
+        this.edit(id, data);
+        this.update()
     }
 }
 
